@@ -8,6 +8,14 @@ const createSpecialty = async (payload: Specialty): Promise<Specialty> => {
     return specialty
 }
 
+const getAllSpecialties = async () => {
+
+}
+const deleteSpecialty = async (id:string) => {
+
+}
 export const SpecialtyService = {
     createSpecialty,
+    getAllSpecialties,
+    deleteSpecialty
 }
