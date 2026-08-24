@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { SpecialtyService } from "./speciality.service";
+import { SpecialtyService } from "./specialty.service";
 
 const createSpecialty = async (req: Request, res: Response) => {
     const payload = req.body
