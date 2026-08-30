@@ -2,8 +2,22 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
 import { Role, UserStatus } from "../../generated/prisma/enums";
-import ms from "ms";
+import ms, { StringValue } from "ms";
 import { envVars } from "../../config/env";
+
+const MAX_COOKIE_AGE_SEC = 60 * 60 * 24 * 400;
+
+const normalizeCookieMaxAge = (value: string) => {
+    const parsedMs = Number(ms(value as StringValue));
+
+    if (!Number.isFinite(parsedMs) || parsedMs <= 0) {
+        return 60 * 60 * 24 * 7;
+    }
+
+    const parsedSec = Math.floor(parsedMs / 1000);
+
+    return Math.min(parsedSec, MAX_COOKIE_AGE_SEC);
+};
 
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
@@ -44,11 +58,11 @@ export const auth = betterAuth({
     },
 
     session: {
-        expiresIn: Number(ms(Number(envVars.BETTER_AUTH_SESSION_TOKEN_EXPIRES_IN))),
-        updateAge: Number(ms(Number(envVars.BETTER_AUTH_SESSION_TOKEN_UPDATE_AGE))),
+        expiresIn: normalizeCookieMaxAge(envVars.BETTER_AUTH_SESSION_TOKEN_EXPIRES_IN),
+        updateAge: normalizeCookieMaxAge(envVars.BETTER_AUTH_SESSION_TOKEN_UPDATE_AGE),
         cookieCache: {
             enabled: true,
-            maxAge: Number(ms(Number(envVars.BETTER_AUTH_SESSION_TOKEN_EXPIRES_IN)))
+            maxAge: normalizeCookieMaxAge(envVars.BETTER_AUTH_SESSION_TOKEN_EXPIRES_IN)
         }
     }
 
