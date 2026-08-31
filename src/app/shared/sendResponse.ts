@@ -4,6 +4,12 @@ interface IResponseData<T> {
     httpStatusCode: number;
     success: boolean;
     message: string;
+    meta?: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+    };
     data?: T
 }
 
