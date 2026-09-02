@@ -3,6 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
 import { Role, UserStatus } from "../../generated/prisma/enums";
 import { envVars } from "../../config/env";
+import { bearer } from "better-auth/plugins";
 
 const DEFAULT_SESSION_EXPIRES_SEC = 60 * 60 * 24 * 7; // 7 days in seconds
 
@@ -43,6 +44,10 @@ export const auth = betterAuth({
             }
         }
     },
+
+    plugins: [
+        bearer()
+    ],
 
     session: {
         expiresIn: DEFAULT_SESSION_EXPIRES_SEC,
