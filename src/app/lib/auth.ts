@@ -2,22 +2,9 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
 import { Role, UserStatus } from "../../generated/prisma/enums";
-import ms, { StringValue } from "ms";
 import { envVars } from "../../config/env";
 
-const MAX_COOKIE_AGE_SEC = 60 * 60 * 24 * 400;
-
-const normalizeCookieMaxAge = (value: string) => {
-    const parsedMs = Number(ms(value as StringValue));
-
-    if (!Number.isFinite(parsedMs) || parsedMs <= 0) {
-        return 60 * 60 * 24 * 7;
-    }
-
-    const parsedSec = Math.floor(parsedMs / 1000);
-
-    return Math.min(parsedSec, MAX_COOKIE_AGE_SEC);
-};
+const DEFAULT_SESSION_EXPIRES_SEC = 60 * 60 * 24 * 7; // 7 days in seconds
 
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
@@ -58,17 +45,20 @@ export const auth = betterAuth({
     },
 
     session: {
-        expiresIn: normalizeCookieMaxAge(envVars.BETTER_AUTH_SESSION_TOKEN_EXPIRES_IN),
-        updateAge: normalizeCookieMaxAge(envVars.BETTER_AUTH_SESSION_TOKEN_UPDATE_AGE),
+        expiresIn: DEFAULT_SESSION_EXPIRES_SEC,
+        updateAge: DEFAULT_SESSION_EXPIRES_SEC,
         cookieCache: {
             enabled: true,
-            maxAge: normalizeCookieMaxAge(envVars.BETTER_AUTH_SESSION_TOKEN_EXPIRES_IN)
+            maxAge: DEFAULT_SESSION_EXPIRES_SEC
+        }
+    },
+
+    advanced: {
+        defaultCookieAttributes: {
+            sameSite: envVars.NODE_ENV === "production" ? "none" : "lax",
+            secure: envVars.NODE_ENV === "production",
+            httpOnly: true,
+            maxAge: 60 * 60 * 24 * 7
         }
     }
-
-    // trustedOrigins: [process.env.BETTER_AUTH_URL || 'http://localhost:5000'],
-
-    // advanced: {
-    //     disableCSRFCheck: true
-    // }
 });

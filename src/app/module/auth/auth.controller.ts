@@ -12,7 +12,7 @@ const registerPatient = catchAsync(
 
         const result = await AuthService.registerPatient(payload)
 
-        const { accessToken, refreshToken, token, ...rest } = result
+        const { accessToken, accessTokenExpiresAt, refreshToken, refreshTokenExpiresAt, token, ...rest } = result
 
         tokenUtils.setAccessTokenCookie(res, accessToken)
         tokenUtils.setRefreshTokenCookie(res, refreshToken)
@@ -25,7 +25,9 @@ const registerPatient = catchAsync(
             data: {
                 token,
                 accessToken,
+                accessTokenExpiresAt,
                 refreshToken,
+                refreshTokenExpiresAt,
                 ...rest
             }
         })
@@ -36,7 +38,7 @@ const loginUser = catchAsync(
         const payload = req.body;
 
         const result = await AuthService.loginUser(payload)
-        const { accessToken, refreshToken, token, ...rest } = result
+        const { accessToken, accessTokenExpiresAt, refreshToken, refreshTokenExpiresAt, token, ...rest } = result
 
         tokenUtils.setAccessTokenCookie(res, accessToken)
         tokenUtils.setRefreshTokenCookie(res, refreshToken)
@@ -49,7 +51,9 @@ const loginUser = catchAsync(
             data: {
                 token,
                 accessToken,
+                accessTokenExpiresAt,
                 refreshToken,
+                refreshTokenExpiresAt,
                 ...rest
             }
         })
@@ -79,7 +83,7 @@ const getNewToken = catchAsync(
 
         const result = await AuthService.getNewToken(refreshToken, betterAuthSessionToken)
 
-        const { accessToken, refreshToken: newRefreshToken, sessionToken } = result
+        const { accessToken, accessTokenExpiresAt, refreshToken: newRefreshToken, refreshTokenExpiresAt, sessionToken } = result
 
         tokenUtils.setAccessTokenCookie(res, accessToken)
         tokenUtils.setRefreshTokenCookie(res, newRefreshToken)
@@ -91,7 +95,9 @@ const getNewToken = catchAsync(
             message: "New token generated successfully",
             data: {
                 accessToken,
+                accessTokenExpiresAt,
                 refreshToken: newRefreshToken,
+                refreshTokenExpiresAt,
                 sessionToken,
             }
         })

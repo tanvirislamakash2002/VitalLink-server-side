@@ -64,10 +64,15 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
             emailVerified: data.user.emailVerified,
         })
 
+        const accessTokenExpiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24);
+        const refreshTokenExpiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
+
         return {
             ...data,
             accessToken,
+            accessTokenExpiresAt,
             refreshToken,
+            refreshTokenExpiresAt,
             patient
         }
     } catch (error) {
@@ -122,10 +127,16 @@ const loginUser = async (payload: ILoginUserPayload) => {
         isDeleted: data.user.isDeleted,
         emailVerified: data.user.emailVerified,
     })
+
+    const accessTokenExpiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24);
+    const refreshTokenExpiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
+
     return {
         ...data,
         accessToken,
-        refreshToken
+        accessTokenExpiresAt,
+        refreshToken,
+        refreshTokenExpiresAt
     }
 }
 
@@ -186,22 +197,22 @@ const getNewToken = async (refreshToken: string, sessionToken: string) => {
     const data = verifiedRefreshToken.data as JwtPayload
 
     const newAccessToken = tokenUtils.getAccessToken({
-        userId: data.user.id,
-        role: data.user.role,
-        name: data.user.name,
-        email: data.user.email,
-        status: data.user.status,
-        isDeleted: data.user.isDeleted,
-        emailVerified: data.user.emailVerified,
+        userId: data.userId,
+        role: data.role,
+        name: data.name,
+        email: data.email,
+        status: data.status,
+        isDeleted: data.isDeleted,
+        emailVerified: data.emailVerified,
     })
     const newRefreshToken = tokenUtils.getRefreshToken({
-        userId: data.user.id,
-        role: data.user.role,
-        name: data.user.name,
-        email: data.user.email,
-        status: data.user.status,
-        isDeleted: data.user.isDeleted,
-        emailVerified: data.user.emailVerified,
+        userId: data.userId,
+        role: data.role,
+        name: data.name,
+        email: data.email,
+        status: data.status,
+        isDeleted: data.isDeleted,
+        emailVerified: data.emailVerified,
     })
 
     const { token } = await prisma.session.update({
@@ -210,14 +221,19 @@ const getNewToken = async (refreshToken: string, sessionToken: string) => {
         },
         data: {
             token: sessionToken,
-            expiresAt: new Date(Date.now() + 60 * 60 * 60 * 24 * 1000),
+            expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
             updatedAt: new Date()
         }
     })
 
+    const accessTokenExpiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24);
+    const refreshTokenExpiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
+
     return {
         accessToken: newAccessToken,
+        accessTokenExpiresAt,
         refreshToken: newRefreshToken,
+        refreshTokenExpiresAt,
         sessionToken: token
     }
 }
