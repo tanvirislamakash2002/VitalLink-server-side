@@ -255,6 +255,17 @@ const changePassword = async (payload: IChangePasswordPayload, sessionToken: str
         })
     })
 
+    if (session.user.needPasswordChange) {
+        await prisma.user.update({
+            where: {
+                id: session.user.id,
+            },
+            data: {
+                needPasswordChange: false
+            }
+        })
+    }
+
     const accessToken = tokenUtils.getAccessToken({
         userId: session.user.id,
         role: session.user.role,
@@ -360,6 +371,17 @@ const resetPassword = async (email: string, otp: string, newPassword: string) =>
             password: newPassword
         }
     })
+
+    if (isUserExist.needPasswordChange) {
+        await prisma.user.update({
+            where: {
+                id: isUserExist.id
+            },
+            data: {
+                needPasswordChange: false
+            }
+        })
+    }
 
     await prisma.session.deleteMany({
         where: {
