@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import nodemailer from "nodemailer"
 import { envVars } from "../../config/env"
 import path from "path";
@@ -44,7 +45,7 @@ export const sendEmail = async ({ subject, templateData, templateName, to, attac
                 contentType: attachment.contentType,
             }))
         })
-
+        console.log(`Email sent to ${to} : ${info.messageId}`);
     } catch (error: any) {
         console.log("Email Sending Error", error.message);
         throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to send email")
