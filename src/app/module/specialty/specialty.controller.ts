@@ -7,7 +7,10 @@ import { sendResponse } from "../../shared/sendResponse";
 const createSpecialty = catchAsync(
     async (req: Request, res: Response) => {
 
-        const payload = req.body
+        const payload = {
+            ...req.body,
+            icon: req.file?.path
+        }
 
         const result = await SpecialtyService.createSpecialty(payload)
 
@@ -36,7 +39,7 @@ const deleteSpecialty =
         async (req: Request, res: Response) => {
             const { id } = req.params
             const result = await SpecialtyService.deleteSpecialty(id as string)
-            
+
             sendResponse(res, {
                 httpStatusCode: 200,
                 success: true,

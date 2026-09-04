@@ -32,6 +32,8 @@ app.use(express.json());
 // Middleware to parse cookies
 app.use(cookieParser());
 
+app.use(express.urlencoded({ extended: true }))
+
 app.use("/api/v1", IndexRoutes)
 
 // Basic route
