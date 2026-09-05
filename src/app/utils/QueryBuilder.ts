@@ -14,7 +14,7 @@ export class QueryBuilder<
     private skip: number = 0;
     private sortBy: string = "createdAt";
     private sortOrder: "asc" | "desc" = "desc";
-    private selectFields: Record<string, boolean | undefined>;
+    private selectFields: Record<string, boolean | undefined> = {};
 
     constructor(
         private model: PrismaModelDelegate,
@@ -128,38 +128,52 @@ export class QueryBuilder<
             if (key.includes(".")) {
                 const parts = key.split(".");
 
+                if (filterableFields && !filterableFields.includes(key)) {
+                    return
+                }
                 if (parts.length === 2) {
                     const [relation, nestedField] = parts;
 
+                    if (!queryWhere[relation]) {
+                        queryWhere[relation] = {}
+                        countQueryWhere[relation] = {}
+                    }
                     queryWhere[relation] = {
-                        [nestedField]: value
+                        [nestedField]: this.parseFilterValue(value)
                     }
 
                     countQueryWhere[relation] = {
-                        [nestedField]: value
+                        [nestedField]: this.parseFilterValue(value)
                     }
+                    return
                 } else if (parts.length === 3) {
                     const [relation, nestedRelation, nestedField] = parts;
 
+                    if (!queryWhere[relation]) {
+                        queryWhere[relation] = {}
+                        countQueryWhere[relation] = {}
+                    }
+
                     queryWhere[relation] = {
                         [nestedRelation]: {
-                            [nestedField]: value
+                            [nestedField]: this.parseFilterValue(value)
                         }
                     }
 
                     countQueryWhere[relation] = {
                         [nestedRelation]: {
-                            [nestedField]: value
+                            [nestedField]: this.parseFilterValue(value)
                         }
                     }
+                    return
                 } else {
-                    queryWhere[key] = value
-                    countQueryWhere[key] = value
+                    queryWhere[key] = this.parseFilterValue(value)
+                    countQueryWhere[key] = this.parseFilterValue(value)
                 }
 
                 if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-                    queryWhere[key] = this.parseFilterValue(value);
-                    countQueryWhere[key] = this.parseFilterValue(value)
+                    queryWhere[key] = this.parseRangeFilter(value as Record<string, string | number>);
+                    countQueryWhere[key] = this.parseRangeFilter(value as Record<string, string | number>)
                     return;
                 }
             }
@@ -168,6 +182,82 @@ export class QueryBuilder<
             countQueryWhere[key] = this.parseFilterValue(value);
         })
 
+        return this
+    }
+
+    paginate(): this {
+
+        const page = Number(this.queryParams.page) || 1;
+        const limit = Number(this.queryParams.limit) || 10;
+
+        this.page = page;
+        this.limit = limit;
+        this.skip = (page - 1) * limit;
+
+        this.query.skip = this.skip;
+        this.query.take = this.limit;
+
+        return this
+    }
+
+    sort(): this {
+
+        const sortBy = this.queryParams.sortBy || "createdAt";
+        const sortOrder = this.queryParams.sortOrder === "asc" ? "asc" : "desc";
+
+        this.sortBy = sortBy;
+        this.sortOrder = sortOrder;
+
+        if (sortBy.includes(".")) {
+            const parts = sortBy.split(".")
+
+            if (parts.length === 2) {
+                const [relation, nestedField] = parts;
+
+                this.query.orderBy = {
+                    [relation]: {
+                        [nestedField]: sortOrder
+                    }
+                }
+            } else if (parts.length === 3) {
+                const [relation, nestedRelation, nestedField] = parts;
+
+                this.query.orderBy = {
+                    [relation]: {
+                        [nestedRelation]: {
+                            [nestedField]: sortOrder
+                        }
+                    }
+                }
+            } else {
+                this.query.orderBy = {
+                    [sortBy]: sortOrder
+                }
+            }
+
+        }
+
+        return this
+    }
+
+    fields(): this {
+        const fieldsParam = this.queryParams.fields;
+
+        // no nested field selection for now, only direct fields
+        if (fieldsParam && typeof fieldsParam === "string") {
+            const fieldsArray = fieldsParam?.split(",").map(field => field.trim());
+            this.selectFields = {};
+
+            fieldsArray?.forEach((field) => {
+                if (this.selectFields) {
+                    this.selectFields[field] = true
+                }
+            })
+
+            this.query.select = this.selectFields as Record<string, boolean | Record<string, unknown>>
+
+            delete this.query.include;
+        }
         return this
     }
 
