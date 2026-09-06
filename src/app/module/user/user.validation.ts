@@ -8,6 +8,8 @@ export const createDoctorZodSchema = z.object({
 
         email: z.email("Invalid email address"),
 
+        registrationNumber: z.string("Registration number is required").min(2, "Registration number must be at least 2 characters").max(50, "Registration number must be at most 50 characters"),
+
         contactNumber: z.string("contact number is required").min(11, "contact number must be at least 11 characters").max(14, "Contact number mujst be at most 15 characters"),
 
         address: z.string("Address is required").min(10, "Address must be at least 10 characters").max(100, "Address must be at most 100").optional(),
