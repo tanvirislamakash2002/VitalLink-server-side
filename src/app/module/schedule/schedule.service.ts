@@ -7,7 +7,8 @@ import { scheduleFilterableFields, scheduleIncludeConfig, scheduleSearchableFiel
 import { ICreateSchedulePayload, IUpdateSchedulePayload } from "./schedule.interface";
 import { convertDateTime } from "./schedule.utils";
 
-const createSchedule = async (payload: ICreateSchedulePayload) =>{
+const createSchedule = async (payload: ICreateSchedulePayload) => {
+
     const { startDate, endDate, startTime, endTime } = payload;
 
     const interval = 30;
@@ -71,24 +72,24 @@ const createSchedule = async (payload: ICreateSchedulePayload) =>{
     return schedules;
 }
 
-const getAllSchedules = async (query : IQueryParams) => {
+const getAllSchedules = async (query: IQueryParams) => {
     const queryBuilder = new QueryBuilder<Schedule, Prisma.ScheduleWhereInput, Prisma.ScheduleInclude>(
         prisma.schedule,
         query,
         {
             searchableFields: scheduleSearchableFields,
-            filterableFields:scheduleFilterableFields
+            filterableFields: scheduleFilterableFields
         }
     )
 
     const result = await queryBuilder
-    .search()
-    .filter()
-    .paginate()
-    .dynamicInclude(scheduleIncludeConfig)
-    .sort()
-    .fields()
-    .execute();
+        .search()
+        .filter()
+        .paginate()
+        .dynamicInclude(scheduleIncludeConfig)
+        .sort()
+        .fields()
+        .execute();
 
     return result;
 }
