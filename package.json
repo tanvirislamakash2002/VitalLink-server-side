@@ -24,6 +24,7 @@
     "studio": "prisma studio",
     "push": "prisma db push",
     "pull": "prisma db pull",
+    "stripe:webhook":"stripe listen --forward-to localhost:5000/webhook",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
@@ -31,7 +32,7 @@
     "@prisma/client": "^7.9.1",
     "@types/cookie-parser": "^1.4.10",
     "better-auth": "^1.7.1",
-    "cloudinary": "^2.11.0",
+    "cloudinary": "^1.41.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "date-fns": "^4.4.0",
@@ -45,6 +46,7 @@
     "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^9.1.1",
     "qs": "^6.16.0",
+    "stripe": "^22.6.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {

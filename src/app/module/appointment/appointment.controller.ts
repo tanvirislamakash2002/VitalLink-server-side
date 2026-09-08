@@ -4,13 +4,13 @@ import { catchAsync } from "../../shared/catchAsync";
 import { sendResponse } from "../../shared/sendResponse";
 import { AppointmentService } from "./appointment.service";
 
-const bookAppointment = catchAsync( async (req : Request, res : Response) => {
+const bookAppointment = catchAsync(async (req: Request, res: Response) => {
     const payload = req.body;
     const user = req.user;
     const appointment = await AppointmentService.bookAppointment(payload, user);
     sendResponse(res, {
         success: true,
-        httpStatusCode: status.CREATED, 
+        httpStatusCode: status.CREATED,
         message: 'Appointment booked successfully',
         data: appointment
     });
@@ -69,7 +69,7 @@ const bookAppointmentWithPayLater = catchAsync(async (req: Request, res: Respons
     const user = req.user;
     const appointment = await AppointmentService.bookAppointmentWithPayLater(payload, user);
     sendResponse(res, {
-        success: true,  
+        success: true,
         httpStatusCode: status.CREATED,
         message: 'Appointment booked successfully with Pay Later option',
         data: appointment

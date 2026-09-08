@@ -15,33 +15,33 @@ const bookAppointment = async (payload: IBookAppointmentPayload, user: IRequestU
 
     const patientData = await prisma.patient.findUniqueOrThrow({
         where: {
-            email: user.email
+            email: user.email,
         }
-    })
+    });
 
     const doctorData = await prisma.doctor.findUniqueOrThrow({
         where: {
             id: payload.doctorId,
-            isDeleted: false
+            isDeleted: false,
         }
-    })
+    });
 
     const scheduleData = await prisma.schedule.findUniqueOrThrow({
         where: {
-            id: payload.scheduleId
+            id: payload.scheduleId,
         }
-    })
+    });
 
     const doctorSchedule = await prisma.doctorSchedules.findUniqueOrThrow({
         where: {
             doctorId_scheduleId: {
                 doctorId: doctorData.id,
-                scheduleId: scheduleData.id
+                scheduleId: scheduleData.id,
             }
         }
-    })
+    });
 
-    const videoCallingId = String(uuidv7())
+    const videoCallingId = String(uuidv7());
 
     const result = await prisma.$transaction(async (tx) => {
         const appointmentData = await tx.appointment.create({
@@ -49,126 +49,72 @@ const bookAppointment = async (payload: IBookAppointmentPayload, user: IRequestU
                 doctorId: payload.doctorId,
                 patientId: patientData.id,
                 scheduleId: doctorSchedule.scheduleId,
-                videoCallingId
+                videoCallingId,
             }
-        })
+        });
 
         await tx.doctorSchedules.update({
             where: {
                 doctorId_scheduleId: {
                     doctorId: payload.doctorId,
-                    scheduleId: payload.scheduleId
+                    scheduleId: payload.scheduleId,
                 }
             },
             data: {
-                isBooked: true
+                isBooked: true,
             }
+        });
+
+        //TODO : Payment Integration will be here
+
+        const transactionId = String(uuidv7());
+
+        const paymentData = await tx.payment.create({
+            data: {
+                appointmentId: appointmentData.id,
+                amount: doctorData.appointmentFee,
+                transactionId
+            }
+        });
+
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            mode: 'payment',
+            line_items: [
+                {
+                    price_data: {
+                        currency: "bdt",
+                        product_data: {
+                            name: `Appointment with Dr. ${doctorData.name}`,
+                        },
+                        unit_amount: doctorData.appointmentFee * 100,
+                    },
+                    quantity: 1,
+                }
+            ],
+            metadata: {
+                appointmentId: appointmentData.id,
+                paymentId: paymentData.id,
+            },
+
+            success_url: `${envVars.FRONTEND_URL}/dashboard/payment/payment-success`,
+
+            // cancel_url: `${envVars.FRONTEND_URL}/dashboard/payment/payment-failed`,
+            cancel_url: `${envVars.FRONTEND_URL}/dashboard/appointments`,
         })
-        return appointmentData;
-    })
-    return result
-    //    const patientData = await prisma.patient.findUniqueOrThrow({
-    //     where : {
-    //         email : user.email,
-    //     }
-    //    });
 
-    //    const doctorData = await prisma.doctor.findUniqueOrThrow({
-    //     where : {
-    //         id : payload.doctorId,
-    //         isDeleted : false,
-    //     }
-    //    });
+        return {
+            appointmentData,
+            paymentData,
+            paymentUrl: session.url,
+        };
+    });
 
-    //    const scheduleData = await prisma.schedule.findUniqueOrThrow({
-    //     where : {
-    //         id : payload.scheduleId,
-    //     }
-    //    });
-
-    //    const doctorSchedule = await prisma.doctorSchedules.findUniqueOrThrow({
-    //     where : {
-    //         doctorId_scheduleId:{
-    //             doctorId : doctorData.id,
-    //             scheduleId : scheduleData.id,   
-    //         }
-    //     }
-    //    });
-
-    //     const videoCallingId = String(uuidv7());
-
-    //     const result = await prisma.$transaction(async (tx) => {
-    //         const appointmentData = await tx.appointment.create({
-    //             data : {
-    //                 doctorId : payload.doctorId,
-    //                 patientId : patientData.id,
-    //                 scheduleId : doctorSchedule.scheduleId,
-    //                 videoCallingId,
-    //             }
-    //         });
-
-    //         await tx.doctorSchedules.update({
-    //             where : {
-    //                 doctorId_scheduleId:{
-    //                     doctorId : payload.doctorId,
-    //                     scheduleId : payload.scheduleId,
-    //                 }
-    //             },
-    //             data : {
-    //                 isBooked : true,
-    //             }
-    //         });
-
-    //         //TODO : Payment Integration will be here
-
-    //         const transactionId = String(uuidv7());
-
-    //         const paymentData = await tx.payment.create({
-    //             data : {
-    //                 appointmentId : appointmentData.id,
-    //                 amount : doctorData.appointmentFee,
-    //                 transactionId
-    //             }
-    //         });
-
-    //         const session = await stripe.checkout.sessions.create({
-    //             payment_method_types: ['card'],
-    //             mode: 'payment',
-    //             line_items :[
-    //                 {
-    //                     price_data:{
-    //                         currency:"bdt",
-    //                         product_data:{
-    //                             name : `Appointment with Dr. ${doctorData.name}`,
-    //                         },
-    //                         unit_amount : doctorData.appointmentFee * 100,
-    //                     },
-    //                     quantity : 1,
-    //                 }
-    //             ],
-    //             metadata:{
-    //                 appointmentId : appointmentData.id,
-    //                 paymentId : paymentData.id,
-    //             },
-
-    //             success_url: `${envVars.FRONTEND_URL}/dashboard/payment/payment-success`,
-
-    //             // cancel_url: `${envVars.FRONTEND_URL}/dashboard/payment/payment-failed`,
-    //             cancel_url: `${envVars.FRONTEND_URL}/dashboard/appointments`,
-    //         })
-
-    //         return {
-    //             appointmentData,
-    //             paymentData,
-    //             paymentUrl : session.url,
-    //         };
-    //     });
-
-    //     return {
-    //         appointment : result.appointmentData,
-    //         payment : result.paymentData,
-    //         paymentUrl : result.paymentUrl,
-    //     };
+    return {
+        appointment: result.appointmentData,
+        payment: result.paymentData,
+        paymentUrl: result.paymentUrl,
+    };
 }
 
 const getMyAppointments = async (user: IRequestUser) => {
@@ -216,7 +162,7 @@ const getMyAppointments = async (user: IRequestUser) => {
 }
 
 // 1. Completed Or Cancelled Appointments should not be allowed to update status
-// 2. Doctors can only update Appoinment status from schedule to inprogress or inprogress to complted or schedule to cancelled.
+// 2. Doctors can only update Appointment status from schedule to inprogress or inprogress to completed or schedule to cancelled.
 // 3. Patients can only cancel the scheduled appointment if it scheduled not completed or cancelled or inprogress. 
 // 4. Admin and Super admin can update to any status.
 
