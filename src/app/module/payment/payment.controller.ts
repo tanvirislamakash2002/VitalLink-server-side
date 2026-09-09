@@ -21,6 +21,7 @@ const handleStripeWebhookEvent = catchAsync(async (req: Request, res: Response) 
     try {
         event = stripe.webhooks.constructEvent(req.body, signature, webhookSecret)
     } catch (error: any) {
+        console.error("Error processing Stripe webhook:", error);
         return res.status(status.BAD_REQUEST).json({ message: "Error processing Stripe webhook" })
     }
 

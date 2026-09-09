@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import express, { Application, Request, Response } from "express";
 import { IndexRoutes } from "./app/routes";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
@@ -10,6 +11,8 @@ import cors from "cors";
 import { envVars } from "./config/env";
 import qs from "qs"
 import { PaymentController } from "./app/module/payment/payment.controller";
+import cron from "node-cron";
+import { AppointmentService } from "./app/module/appointment/appointment.service";
 
 const app: Application = express()
 app.set("query parser", (str: string) => qs.parse(str))
@@ -39,6 +42,14 @@ app.use(cookieParser());
 
 app.use(express.urlencoded({ extended: true }))
 
+cron.schedule("*/25 * * * *", async () => {
+    try {
+        console.log("Running cron job to cancel unpaid appointments...");
+        await AppointmentService.cancelUnpaidAppointments();
+    } catch (error: any) {
+        console.error("Error occurred while canceling unpaid appointments:", error.message)
+    }
+})
 app.use("/api/v1", IndexRoutes)
 
 // Basic route
