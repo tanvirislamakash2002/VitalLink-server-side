@@ -65,9 +65,57 @@ const giveReview = async (user: IRequestUser, payload: ICreateReviewPayload) => 
 
 const getAllReviews = async (
 ) => {
+    const reviews = await prisma.review.findMany({
+        include: {
+            doctor: true,
+            patient: true,
+            appointment: true
+        }
+    })
+    return reviews;
 };
 
 const myReviews = async (user: IRequestUser) => {
+    const isUserExist = await prisma.user.findUnique({
+        where: {
+            email: user?.email,
+        }
+    })
+    if (!isUserExist) {
+        throw new AppError(status.BAD_REQUEST, "Only patient can view their reviews")
+    }
+    if (isUserExist.role === Role.DOCTOR) {
+        const doctorData = await prisma.doctor.findUniqueOrThrow({
+            where: {
+                email: user?.email
+            }
+        })
+        return await prisma.review.findMany({
+            where: {
+                doctorId: doctorData.id
+            },
+            include: {
+                patient: true,
+                appointment: true
+            }
+        })
+    }
+    if (isUserExist.role === Role.PATIENT) {
+        const patientData = await prisma.patient.findUniqueOrThrow({
+            where: {
+                email: user?.email
+            }
+        })
+        return await prisma.review.findMany({
+            where: {
+                patientId: patientData.id
+            },
+            include: {
+                doctor: true,
+                appointment: true
+            }
+        })
+    }
 };
 
 const updateReview = async (user: IRequestUser, reviewId: string, payload: IUpdateReviewPayload) => {
