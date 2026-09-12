@@ -27,11 +27,64 @@ const getDashboardStatsData = async (user: IRequestUser) => {
 }
 
 const getSuperAdminStatsData = async () => {
+    const appointmentCount = await prisma.appointment.count();
+    const doctorCount = await prisma.doctor.count();
+    const patientCount = await prisma.patient.count();
+    const superAdminCount = await prisma.admin.count({
+        where: {
+            user: {
+                role: Role.SUPER_ADMIN
+            }
+        }
+    });
+    const adminCount = await prisma.admin.count();
+    const paymentCount = await prisma.payment.count();
+    const userCount = await prisma.user.count();
 
+    const totalRevenue = await prisma.payment.aggregate({
+        _sum: { amount: true },
+        where: {
+            status: PaymentStatus.PAID
+        }
+    })
+
+    return {
+        appointmentCount,
+        doctorCount,
+        patientCount,
+        superAdminCount,
+        adminCount,
+        paymentCount,
+        userCount,
+        totalRevenue: totalRevenue._sum.amount || 0
+    }
 }
 
 const getAdminStatsData = async () => {
+    const appointmentCount = await prisma.appointment.count();
+    const doctorCount = await prisma.doctor.count();
+    const patientCount = await prisma.patient.count();
+    const paymentCount = await prisma.payment.count();
+    const userCount = await prisma.user.count();
+    const adminCount = await prisma.admin.count();
 
+    const totalRevenue = await prisma.payment.aggregate({
+        _sum: {
+            amount: true
+        },
+        where: {
+            status: PaymentStatus.PAID
+        }
+    })
+    return {
+        appointmentCount,
+        doctorCount,
+        patientCount,
+        paymentCount,
+        userCount,
+        adminCount,
+        totalRevenue: totalRevenue._sum.amount || 0
+    }
 }
 
 const getDoctorStatsData = async (user: IRequestUser) => {
