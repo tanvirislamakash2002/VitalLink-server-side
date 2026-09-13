@@ -37,13 +37,54 @@ const getStatusCodeFromPrismaError = (errorCode: string): number => {
         return status.SERVICE_UNAVAILABLE
     }
 
-    if(errorCode.startsWith("P2")){
+    if (errorCode.startsWith("P2")) {
         return status.BAD_REQUEST
     }
 
-    if(errorCode.startsWith("P3")||errorCode.startsWith("P4")){
+    if (errorCode.startsWith("P3") || errorCode.startsWith("P4")) {
         return status.INTERNAL_SERVER_ERROR
     }
 
     return status.INTERNAL_SERVER_ERROR
 }
+
+const formatErrorMeta = (meta?: Record<string, unknown>): string => {
+    if (!meta) return ""
+
+    const parts: string[] = []
+    if (meta.target) {
+        parts.push(`Field(s): ${String(meta.target)}`)
+    }
+
+    if (meta.field_name) {
+        parts.push(`Field:${String(meta.field_name)}`)
+    }
+
+    if (meta.column_name) {
+        parts.push(`Column: ${String(meta.column_name)}`)
+    }
+
+    if (meta.table) {
+        parts.push(`Table: ${String(meta.table)}`)
+    }
+
+    if (meta.model_name) {
+        parts.push(`Model: ${String(meta.model_name)}`)
+    }
+
+    if (meta.relation_name) {
+        parts.push(`Relation: ${String(meta.relation_name)}`)
+    }
+
+    if (meta.constraint) {
+        parts.push(`Constraint: ${String(meta.constraint)}`)
+    }
+
+    if (meta.database_error) {
+        parts.push(`Database Error: ${String(meta.database_error)}`)
+    }
+
+    return parts.length > 0 ? parts.join(" |") : ""
+}
+
+export const handlePrismaClientKnownRequestError = (error: any) => { }
