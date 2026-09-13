@@ -153,7 +153,44 @@ const getDoctorStatsData = async (user: IRequestUser) => {
 }
 
 const getPatientStatsData = async (user: IRequestUser) => {
+    const patientData = await prisma.patient.findUniqueOrThrow({
+        where: {
+            email: user.email
+        }
+    });
 
+    const appointmentCount = await prisma.appointment.count({
+        where: {
+            patientId: patientData.id
+        }
+    })
+
+    const reviewCount = await prisma.review.count({
+        where: {
+            patientId: patientData.id
+        }
+    })
+
+    const appointmentStatusDistribution = await prisma.appointment.groupBy({
+        by: ["status"],
+        _count: {
+            id: true
+        },
+        where: {
+            patientId: patientData.id
+        }
+    })
+
+    const formattedAppointmentStatusDistribution = appointmentStatusDistribution.map(({ _count, status }) => ({
+        status,
+        count: _count.id
+    }))
+
+    return {
+        appointmentCount,
+        reviewCount,
+        appointmentStatusDistribution: formattedAppointmentStatusDistribution
+    }
 }
 
 const getPieChartData = async () => {
