@@ -1,8 +1,8 @@
 import status from "http-status";
-import { UserStatus } from "../../../generated/prisma/enums";
+import { Role, UserStatus } from "../../../generated/prisma/enums";
 import AppError from "../../errorHelpers/AppError";
 import { prisma } from "../../lib/prisma";
-import { IUpdateAdminPayload } from "./admin.interface";
+import { IChangeUserRolePayload, IChangeUserStatusPayload, IUpdateAdminPayload } from "./admin.interface";
 import { IRequestUser } from "../../interfaces/requestUser.interface";
 
 const getAllAdmins = async () => {
@@ -107,9 +107,60 @@ const deleteAdmin = async (id: string, user: IRequestUser) => {
     return result;
 }
 
+const changeUserStatus = async (user: IRequestUser, payload: IChangeUserStatusPayload) => {
+    const isAdminExists = await prisma.admin.findUniqueOrThrow({
+        where: {
+            email: user.email
+        },
+        include: {
+            user: true
+        }
+    })
+    const { userId, userStatus } = payload;
+
+    const userToChangeStatus = await prisma.user.findUniqueOrThrow({
+        where: {
+            id: userId
+        }
+    })
+
+    const selfStatusChange = isAdminExists.userId === userId;
+
+    if (selfStatusChange) {
+        throw new AppError(status.BAD_REQUEST, "You cannot change your own status")
+    }
+
+    if (isAdminExists.user.role === Role.ADMIN && userToChangeStatus.role === Role.SUPER_ADMIN) {
+        throw new AppError(status.BAD_REQUEST, "You cannot change the status of super admin. Only super admin can change the status of another super admin")
+    }
+
+    if (isAdminExists.user.role === Role.ADMIN && userToChangeStatus.role === Role.ADMIN) {
+        throw new AppError(status.BAD_REQUEST, "You cannot change the status of another admin. Only super admin can change the status of another admin")
+    }
+
+    if (userStatus === UserStatus.DELETED) {
+        throw new AppError(status.BAD_REQUEST, "You cannot set user status to deleted. To delete a user, you have to use role specific delete api. For example, to delete an doctor user, you have to use delete doctor api which will set the user status to deleted and also set isDeleted to true and also delete the user session and account")
+    }
+
+    const updateUser = await prisma.user.update({
+        where: {
+            id: userId,
+        }, data: {
+            status: userStatus,
+        }
+    })
+    return updateUser;
+}
+
+const changeUserRole = async (user: IRequestUser, payload: IChangeUserRolePayload) => {
+
+}
+
 export const AdminService = {
     getAllAdmins,
     getAdminById,
     updateAdmin,
     deleteAdmin,
+    changeUserStatus,
+    changeUserRole
 }
