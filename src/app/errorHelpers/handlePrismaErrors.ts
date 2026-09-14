@@ -169,9 +169,48 @@ export const handlePrismaClientValidationError = (error: Prisma.PrismaClientVali
     })
 
     return {
-        success:false,
-        statusCode:status.BAD_REQUEST,
-        message:`Prisma Client Validation Error: ${mainMessage}`,
+        success: false,
+        statusCode: status.BAD_REQUEST,
+        message: `Prisma Client Validation Error: ${mainMessage}`,
         errorSources
+    }
+}
+
+export const handlePrismaClientInitializationError = (error: Prisma.PrismaClientInitializationError): TErrorResponse => {
+    const statusCode = error.errorCode ? getStatusCodeFromPrismaError(error.errorCode) : status.SERVICE_UNAVAILABLE
+
+    const cleanMessage = error.message;
+    cleanMessage.replace(/Invalid `.*?` invocation:?\s*/i, "")
+
+    const lines = cleanMessage.split("\n").filter(line => line.trim());
+
+    const mainMessage = lines[0] || "An error occurred while initializing the Prisma Client."
+
+    const errorSources: TErrorSources[] = [
+        {
+            path: error.errorCode || "Initialization Error",
+            message: mainMessage
+        }
+    ]
+
+    return {
+        success: false,
+        statusCode,
+        message: `Prisma Client Initialization Error: ${mainMessage}`,
+        errorSources
+    }
+}
+
+export const handlePrismaClientRustPanicError = (): TErrorResponse => {
+    const errorSources: TErrorSources[] = [{
+        path: "Rust Engine Crashed",
+        message: "The database engine encountered a fatal error and crashed. This is usually due to an internal bug in the Prisma engine or an unexpected edge case in the database operation. Please check the Prisma logs for more details and consider reporting this issue to the Prisma team if it persists."
+    }]
+
+    return {
+        success: false,
+        statusCode: status.INTERNAL_SERVER_ERROR,
+        message: "Prisma Client Rust Panic Error The database engine crashed due to a fatal error.",
+        errorSources,
     }
 }
