@@ -121,3 +121,26 @@ export const handlePrismaClientKnownRequestError = (error: Prisma.PrismaClientKn
         errorSources
     }
 }
+
+export const handlePrismaClientUnknownError = (error: Prisma.PrismaClientUnknownRequestError): TErrorResponse => {
+    let cleanMessage = error.message;
+
+    cleanMessage = cleanMessage.replace(/Invalid `.*?` invocation:?\s*/i, "")
+
+    const lines = cleanMessage.split("\n").filter(line => line.trim());
+    const mainMessage = lines[0] || "An unknown error occurred with the database operation."
+
+    const errorSources: TErrorSources[] = [
+        {
+            path: "Unknown Prisma Error",
+            message: mainMessage
+        }
+    ]
+
+    return {
+        success: false,
+        statusCode: status.INTERNAL_SERVER_ERROR,
+        message: `Prisma Client Unknown Request Error: ${mainMessage}`,
+        errorSources
+    }
+}
