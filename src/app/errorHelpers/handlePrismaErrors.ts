@@ -144,3 +144,34 @@ export const handlePrismaClientUnknownError = (error: Prisma.PrismaClientUnknown
         errorSources
     }
 }
+
+export const handlePrismaClientValidationError = (error: Prisma.PrismaClientValidationError): TErrorResponse => {
+    let cleanMessage = error.message;
+
+    cleanMessage = cleanMessage.replace(/Invalid `.*?` invocation:?\s*/i, "")
+
+    const lines = cleanMessage.split("\n").filter(line => line.trim())
+
+    const errorSources: TErrorSources[] = []
+
+    const fieldMatch = cleanMessage.match(/Argument `(\w+)`/i)
+    const fieldName = fieldMatch ? fieldMatch[1] : "Unknown Field"
+
+    const mainMessage = lines.find(line =>
+        !line.includes("Argument") &&
+        !line.includes("→") &&
+        line.length > 10
+    ) || lines[0] || "Invalid query parameters provided to the database operation."
+
+    errorSources.push({
+        path: fieldName,
+        message: mainMessage
+    })
+
+    return {
+        success:false,
+        statusCode:status.BAD_REQUEST,
+        message:`Prisma Client Validation Error: ${mainMessage}`,
+        errorSources
+    }
+}
