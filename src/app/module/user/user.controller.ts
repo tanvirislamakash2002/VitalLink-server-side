@@ -7,6 +7,9 @@ import status from "http-status";
 const createDoctor = catchAsync(
     async (req: Request, res: Response) => {
         const payload = req.body;
+        if (req.file?.path && payload.doctor) {
+            payload.doctor.profilePhoto = req.file.path;
+        }
 
         const result = await UserService.createDoctor(payload)
 
