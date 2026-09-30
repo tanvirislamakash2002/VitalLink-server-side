@@ -2,6 +2,7 @@ import { Router } from "express";
 import { Role } from "../../../generated/prisma/enums";
 import { checkAuth } from "../../middleware/checkAuth";
 import { validateRequest } from "../../middleware/validateRequest";
+import { multerUpload } from "../../../config/multer.config";
 import { DoctorController } from "./doctor.controller";
 import { updateDoctorZodSchema } from "./doctor.validation";
 
@@ -15,6 +16,7 @@ router.get("/:id",
     DoctorController.getDoctorById);
 router.patch("/:id",
     checkAuth(Role.ADMIN, Role.SUPER_ADMIN),
+    multerUpload.single("file"),
     validateRequest(updateDoctorZodSchema), DoctorController.updateDoctor);
 router.delete("/:id",
     checkAuth(Role.ADMIN, Role.SUPER_ADMIN),

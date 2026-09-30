@@ -40,6 +40,12 @@ const updateDoctor = catchAsync(
     async (req: Request, res: Response) => {
         const { id } = req.params;
         const payload = req.body;
+        if (req.file?.path) {
+            payload.doctor = {
+                ...(payload.doctor ?? {}),
+                profilePhoto: req.file.path,
+            };
+        }
 
         const updatedDoctor = await DoctorService.updateDoctor(id as string, payload);
 
