@@ -151,6 +151,15 @@ export class QueryBuilder<
                     const queryRelation = queryWhere[relation] as Record<string, unknown>;
                     const countRelation = countQueryWhere[relation] as Record<string, unknown>;
 
+                    if (relation === 'specialties') {
+                        const specialtyFilter = {
+                            [nestedField]: this.parseFilterValue(value),
+                        };
+                        queryRelation.some = specialtyFilter;
+                        countRelation.some = specialtyFilter;
+                        return;
+                    }
+
                     queryRelation[nestedField] = this.parseFilterValue(value);
                     countRelation[nestedField] = this.parseFilterValue(value);
                     return;
