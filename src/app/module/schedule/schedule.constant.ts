@@ -9,19 +9,31 @@ export const scheduleFilterableFields = [
 
 export const scheduleSearchableFields = [
     'id',
-    'startDateTime',
-    'endDateTime',
 ]
 
 export const scheduleIncludeConfig : Partial<Record<keyof Prisma.ScheduleInclude, Prisma.ScheduleInclude[keyof Prisma.ScheduleInclude]>> ={
     appointments: {
-        include: {
-            doctor: true,
-            patient: true,
-            payment: true,
-            prescription: true,
-            review: true,
-        }
+        select: {
+            id: true,
+            status: true,
+            paymentStatus: true,
+            patient: {
+                select: {
+                    name: true,
+                    email: true,
+                },
+            },
+        },
     },
-    doctorSchedules: true
+    doctorSchedules: {
+        include: {
+            doctor: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                },
+            },
+        },
+    },
 }

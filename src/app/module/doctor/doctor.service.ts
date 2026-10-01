@@ -68,7 +68,19 @@ const getDoctorById = async (id: string) => {
             isDeleted: false,
         },
         include: {
-            user: true,
+            user: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                    status: true,
+                    emailVerified: true,
+                    needPasswordChange: true,
+                    image: true,
+                    createdAt: true,
+                },
+            },
             specialties: {
                 include: {
                     specialty: true

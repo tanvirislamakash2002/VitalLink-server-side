@@ -39,7 +39,7 @@ const createSchedule = async (payload: ICreateSchedulePayload) => {
             )
         );
 
-        while (startDateTime < endDateTime) {
+        while (addMinutes(startDateTime, interval) <= endDateTime) {
             const s = await convertDateTime(startDateTime);
             const e = await convertDateTime(addMinutes(startDateTime, interval));
 
@@ -86,7 +86,7 @@ const getAllSchedules = async (query: IQueryParams) => {
         .search()
         .filter()
         .paginate()
-        .dynamicInclude(scheduleIncludeConfig)
+        .dynamicInclude(scheduleIncludeConfig, ["doctorSchedules", "appointments"])
         .sort()
         .fields()
         .execute();
@@ -106,7 +106,7 @@ const getScheduleById = async (id: string) => {
 // refactoring - doctor's appointment or booked slot conflict check
 const updateSchedule = async (id: string, payload: IUpdateSchedulePayload) => {
     const { startDate, endDate, startTime, endTime } = payload;
-    const startDateTime = new Date(
+    const localStartDateTime = new Date(
         addMinutes(
             addHours(
                 `${format(new Date(startDate), 'yyyy-MM-dd')}`,
@@ -116,7 +116,7 @@ const updateSchedule = async (id: string, payload: IUpdateSchedulePayload) => {
         )
     );
 
-    const endDateTime = new Date(
+    const localEndDateTime = new Date(
         addMinutes(
             addHours(
                 `${format(new Date(endDate), 'yyyy-MM-dd')}`,
@@ -125,6 +125,8 @@ const updateSchedule = async (id: string, payload: IUpdateSchedulePayload) => {
             Number(endTime.split(':')[1])
         )
     );
+    const startDateTime = await convertDateTime(localStartDateTime);
+    const endDateTime = await convertDateTime(localEndDateTime);
 
     const updatedSchedule = await prisma.schedule.update({
         where: {
