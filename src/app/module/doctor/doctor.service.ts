@@ -61,8 +61,18 @@ const getAllDoctors = async (query: IQueryParams) => {
     return result;
 }
 
+type PublicDoctorListItem = Doctor & {
+    specialties: Array<{
+        specialty: {
+            id: string;
+            title: string;
+            icon: string | null;
+        };
+    }>;
+};
+
 const getAllPublicDoctors = async (query: IQueryParams) => {
-    const queryBuilder = new QueryBuilder<Doctor, Prisma.DoctorWhereInput, Prisma.DoctorInclude>(
+    const queryBuilder = new QueryBuilder<PublicDoctorListItem, Prisma.DoctorWhereInput, Prisma.DoctorInclude>(
         prisma.doctor,
         query,
         {
@@ -204,6 +214,41 @@ const getPublicDoctorById = async (id: string) => {
     });
 }
 
+const getPublicDoctorSchedules = async (doctorId: string) => {
+    const doctor = await prisma.doctor.findFirst({
+        where: {
+            id: doctorId,
+            isDeleted: false,
+            user: { status: UserStatus.ACTIVE },
+        },
+        select: { id: true },
+    });
+
+    if (!doctor) {
+        throw new AppError(status.NOT_FOUND, "Doctor not found");
+    }
+
+    const schedules = await prisma.doctorSchedules.findMany({
+        where: {
+            doctorId: doctor.id,
+            isBooked: false,
+            schedule: { startDateTime: { gt: new Date() } },
+        },
+        select: {
+            schedule: {
+                select: {
+                    id: true,
+                    startDateTime: true,
+                    endDateTime: true,
+                },
+            },
+        },
+        orderBy: { schedule: { startDateTime: "asc" } },
+    });
+
+    return schedules.map(({ schedule }) => schedule);
+}
+
 const updateDoctor = async (id: string, payload: IUpdateDoctorPayload) => {
     const isDoctorExist = await prisma.doctor.findUnique({
         where: {
@@ -311,6 +356,7 @@ export const DoctorService = {
     getAllPublicDoctors,
     getDoctorById,
     getPublicDoctorById,
+    getPublicDoctorSchedules,
     updateDoctor,
     deleteDoctor,
 }

@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import Stripe from "stripe";
+import status from "http-status";
 import { PaymentStatus } from "../../../generated/prisma/enums";
+import AppError from "../../errorHelpers/AppError";
+import { IRequestUser } from "../../interfaces/requestUser.interface";
 import { uploadFileToCloudinary } from "../../../config/cloudinary.config";
 import { prisma } from "../../lib/prisma";
 import { sendEmail } from "../../utils/email";
@@ -165,6 +168,51 @@ const handlerStripeWebhookEvent = async (event : Stripe.Event) =>{
     return {message : `Webhook Event ${event.id} processed successfully`}
 }
 
+const confirmCheckoutSession = async (sessionId: string, user: IRequestUser) => {
+    if (!sessionId) {
+        throw new AppError(status.BAD_REQUEST, "Checkout session ID is required");
+    }
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const appointmentId = session.metadata?.appointmentId;
+    const paymentId = session.metadata?.paymentId;
+
+    if (!appointmentId || !paymentId || session.mode !== "payment") {
+        throw new AppError(status.BAD_REQUEST, "Checkout session is not linked to an appointment");
+    }
+
+    const patient = await prisma.patient.findUniqueOrThrow({
+        where: { email: user.email },
+        select: { id: true },
+    });
+    const appointment = await prisma.appointment.findFirst({
+        where: { id: appointmentId, patientId: patient.id },
+        include: { payment: true },
+    });
+
+    if (!appointment || !appointment.payment || appointment.payment.id !== paymentId) {
+        throw new AppError(status.NOT_FOUND, "Appointment payment was not found");
+    }
+
+    if (session.payment_status !== "paid") {
+        return { appointmentId, paymentStatus: appointment.paymentStatus };
+    }
+
+    await prisma.$transaction([
+        prisma.appointment.update({
+            where: { id: appointmentId },
+            data: { paymentStatus: PaymentStatus.PAID },
+        }),
+        prisma.payment.update({
+            where: { id: paymentId },
+            data: { status: PaymentStatus.PAID },
+        }),
+    ]);
+
+    return { appointmentId, paymentStatus: PaymentStatus.PAID };
+}
+
 export const PaymentService = {
-    handlerStripeWebhookEvent
+    handlerStripeWebhookEvent,
+    confirmCheckoutSession,
 }

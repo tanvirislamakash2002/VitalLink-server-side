@@ -12,6 +12,7 @@ router.get("/",
     checkAuth(Role.ADMIN, Role.SUPER_ADMIN),
     DoctorController.getAllDoctors);
 router.get("/public", DoctorController.getAllPublicDoctors);
+router.get("/public/:id/available-schedules", DoctorController.getPublicDoctorSchedules);
 router.get("/public/:id", DoctorController.getPublicDoctorById);
 router.get("/:id",
     checkAuth(Role.ADMIN, Role.SUPER_ADMIN),

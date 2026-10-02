@@ -64,6 +64,19 @@ const getPublicDoctorById = catchAsync(
     }
 )
 
+const getPublicDoctorSchedules = catchAsync(
+    async (req: Request, res: Response) => {
+        const schedules = await DoctorService.getPublicDoctorSchedules(req.params.id as string);
+
+        sendResponse(res, {
+            httpStatusCode: status.OK,
+            success: true,
+            message: "Available doctor schedules fetched successfully",
+            data: schedules,
+        })
+    }
+)
+
 const updateDoctor = catchAsync(
     async (req: Request, res: Response) => {
         const { id } = req.params;
@@ -106,6 +119,7 @@ export const DoctorController = {
     getAllPublicDoctors,
     getDoctorById,
     getPublicDoctorById,
+    getPublicDoctorSchedules,
     updateDoctor,
     deleteDoctor,
 };

@@ -1,6 +1,7 @@
 import status from "http-status";
 // import { uuidv7 } from "zod/mini";
 import { v7 as uuidv7 } from "uuid";
+import { Prisma } from "../../../generated/prisma/client";
 import { PaymentStatus, Role } from "../../../generated/prisma/enums";
 import AppError from "../../errorHelpers/AppError";
 import { IRequestUser } from "../../interfaces/requestUser.interface";
@@ -9,6 +10,29 @@ import { AppointmentStatus } from './../../../generated/prisma/enums';
 import { IBookAppointmentPayload } from "./appointment.interface";
 import { stripe } from "../../../config/stripe.config";
 import { envVars } from "../../../config/env";
+
+const claimAvailableSchedule = async (tx: Prisma.TransactionClient, doctorId: string, scheduleId: string) => {
+    const schedule = await tx.schedule.findUnique({
+        where: { id: scheduleId },
+        select: { startDateTime: true },
+    });
+
+    if (!schedule) {
+        throw new AppError(status.NOT_FOUND, "Schedule not found");
+    }
+    if (schedule.startDateTime <= new Date()) {
+        throw new AppError(status.BAD_REQUEST, "This schedule has already started");
+    }
+
+    const claim = await tx.doctorSchedules.updateMany({
+        where: { doctorId, scheduleId, isBooked: false },
+        data: { isBooked: true },
+    });
+
+    if (claim.count !== 1) {
+        throw new AppError(status.CONFLICT, "This schedule is no longer available");
+    }
+}
 
 // Pay Now Book Appointment
 const bookAppointment = async (payload: IBookAppointmentPayload, user: IRequestUser) => {
@@ -44,6 +68,8 @@ const bookAppointment = async (payload: IBookAppointmentPayload, user: IRequestU
     const videoCallingId = String(uuidv7());
 
     const result = await prisma.$transaction(async (tx) => {
+        await claimAvailableSchedule(tx, doctorData.id, payload.scheduleId);
+
         const appointmentData = await tx.appointment.create({
             data: {
                 doctorId: payload.doctorId,
@@ -97,10 +123,10 @@ const bookAppointment = async (payload: IBookAppointmentPayload, user: IRequestU
                 paymentId: paymentData.id,
             },
 
-            success_url: `${envVars.FRONTEND_URL}/dashboard/payment/payment-success`,
+            success_url: `${envVars.FRONTEND_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
 
             // cancel_url: `${envVars.FRONTEND_URL}/dashboard/payment/payment-failed`,
-            cancel_url: `${envVars.FRONTEND_URL}/dashboard/appointments`,
+            cancel_url: `${envVars.FRONTEND_URL}/dashboard/my-appointments?payment=cancelled`,
         })
 
         return {
@@ -289,6 +315,8 @@ const bookAppointmentWithPayLater = async (payload: IBookAppointmentPayload, use
     const videoCallingId = String(uuidv7());
 
     const result = await prisma.$transaction(async (tx) => {
+        await claimAvailableSchedule(tx, doctorData.id, payload.scheduleId);
+
         const appointmentData = await tx.appointment.create({
             data: {
                 doctorId: payload.doctorId,
@@ -384,10 +412,10 @@ const initiatePayment = async (appointmentId: string, user: IRequestUser) => {
             paymentId: appointmentData.payment.id,
         },
 
-        success_url: `${envVars.FRONTEND_URL}/dashboard/payment/payment-success?appointment_id=${appointmentData.id}&payment_id=${appointmentData.payment.id}`,
+        success_url: `${envVars.FRONTEND_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
 
         // cancel_url: `${envVars.FRONTEND_URL}/dashboard/payment/payment-failed`,
-        cancel_url: `${envVars.FRONTEND_URL}/dashboard/appointments?error=payment_cancelled`,
+        cancel_url: `${envVars.FRONTEND_URL}/dashboard/my-appointments?payment=cancelled`,
     })
 
     return {

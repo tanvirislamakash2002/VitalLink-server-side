@@ -44,6 +44,17 @@ const handleStripeWebhookEvent = catchAsync(async (req: Request, res: Response) 
     }
 })
 
+const confirmCheckoutSession = catchAsync(async (req: Request, res: Response) => {
+    const result = await PaymentService.confirmCheckoutSession(req.body.sessionId, req.user);
+    sendResponse(res, {
+        httpStatusCode: status.OK,
+        success: true,
+        message: "Checkout payment verified",
+        data: result,
+    });
+})
+
 export const PaymentController = {
-    handleStripeWebhookEvent
+    handleStripeWebhookEvent,
+    confirmCheckoutSession,
 }
