@@ -21,11 +21,39 @@ const getAllDoctors = catchAsync(
     }
 )
 
+const getAllPublicDoctors = catchAsync(
+    async (req: Request, res: Response) => {
+        const result = await DoctorService.getAllPublicDoctors(req.query as IQueryParams);
+
+        sendResponse(res, {
+            httpStatusCode: status.OK,
+            success: true,
+            message: "Doctors fetched successfully",
+            data: result.data,
+            meta: result.meta,
+        })
+    }
+)
+
 const getDoctorById = catchAsync(
     async (req: Request, res: Response) => {
         const { id } = req.params;
 
         const doctor = await DoctorService.getDoctorById(id as string);
+
+        sendResponse(res, {
+            httpStatusCode: status.OK,
+            success: true,
+            message: "Doctor fetched successfully",
+            data: doctor,
+        })
+    }
+)
+
+const getPublicDoctorById = catchAsync(
+    async (req: Request, res: Response) => {
+        const { id } = req.params;
+        const doctor = await DoctorService.getPublicDoctorById(id as string);
 
         sendResponse(res, {
             httpStatusCode: status.OK,
@@ -75,7 +103,9 @@ const deleteDoctor = catchAsync(
 
 export const DoctorController = {
     getAllDoctors,
+    getAllPublicDoctors,
     getDoctorById,
+    getPublicDoctorById,
     updateDoctor,
     deleteDoctor,
 };

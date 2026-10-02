@@ -61,6 +61,59 @@ const getAllDoctors = async (query: IQueryParams) => {
     return result;
 }
 
+const getAllPublicDoctors = async (query: IQueryParams) => {
+    const queryBuilder = new QueryBuilder<Doctor, Prisma.DoctorWhereInput, Prisma.DoctorInclude>(
+        prisma.doctor,
+        query,
+        {
+            searchableFields: doctorSearchableFields,
+            filterableFields: ["gender", "appointmentFee", "experience", "specialties.specialtyId"],
+        }
+    )
+
+    const result = await queryBuilder
+        .search()
+        .filter()
+        .where({
+            isDeleted: false,
+            user: { status: UserStatus.ACTIVE },
+        })
+        .paginate()
+        .include({
+            specialties: {
+                include: {
+                    specialty: {
+                        select: { id: true, title: true, icon: true },
+                    },
+                },
+            },
+        })
+        .sort()
+        .execute()
+
+    return {
+        ...result,
+        data: result.data.map((doctor) => ({
+            id: doctor.id,
+            name: doctor.name,
+            email: doctor.email,
+            profilePhoto: doctor.profilePhoto,
+            contactNumber: doctor.contactNumber,
+            address: doctor.address,
+            registrationNumber: doctor.registrationNumber,
+            experience: doctor.experience,
+            gender: doctor.gender,
+            appointmentFee: doctor.appointmentFee,
+            qualification: doctor.qualification,
+            currentWorkingPlace: doctor.currentWorkingPlace,
+            designation: doctor.designation,
+            averageRating: doctor.averageRating,
+            createdAt: doctor.createdAt,
+            specialties: doctor.specialties.map(({ specialty }) => ({ specialty })),
+        })),
+    }
+}
+
 const getDoctorById = async (id: string) => {
     const doctor = await prisma.doctor.findUnique({
         where: {
@@ -102,6 +155,53 @@ const getDoctorById = async (id: string) => {
         }
     })
     return doctor;
+}
+
+const getPublicDoctorById = async (id: string) => {
+    return prisma.doctor.findFirst({
+        where: {
+            id,
+            isDeleted: false,
+        },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            profilePhoto: true,
+            contactNumber: true,
+            address: true,
+            registrationNumber: true,
+            experience: true,
+            gender: true,
+            appointmentFee: true,
+            qualification: true,
+            currentWorkingPlace: true,
+            designation: true,
+            averageRating: true,
+            specialties: {
+                select: {
+                    specialty: {
+                        select: {
+                            id: true,
+                            title: true,
+                            icon: true,
+                        },
+                    },
+                },
+            },
+            reviews: {
+                orderBy: {
+                    createdAt: "desc",
+                },
+                select: {
+                    id: true,
+                    rating: true,
+                    comment: true,
+                    createdAt: true,
+                },
+            },
+        },
+    });
 }
 
 const updateDoctor = async (id: string, payload: IUpdateDoctorPayload) => {
@@ -208,7 +308,9 @@ const deleteDoctor = async (id: string) => {
 
 export const DoctorService = {
     getAllDoctors,
+    getAllPublicDoctors,
     getDoctorById,
+    getPublicDoctorById,
     updateDoctor,
     deleteDoctor,
 }
