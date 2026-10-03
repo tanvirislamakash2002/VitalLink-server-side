@@ -8,3 +8,4 @@ src/generated
 .claude
 .windsurf
 prisma/migrations
+.vscode

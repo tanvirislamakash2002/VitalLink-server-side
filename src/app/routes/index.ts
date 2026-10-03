@@ -10,6 +10,7 @@ import { AppointmentRoutes } from "../module/appointment/appointment.route";
 import { PatientRoutes } from "../module/patient/patient.route";
 import { StatsRoutes } from "../module/stats/stats.route";
 import { PaymentRoutes } from "../module/payment/payment.route";
+import { RagRoutes } from "../module/rag/rag.route";
 
 const router = Router()
 
@@ -24,5 +25,6 @@ router.use("/doctor-schedules", DoctorScheduleRoutes)
 router.use("/appointments", AppointmentRoutes)
 router.use("/stats", StatsRoutes)
 router.use("/payments", PaymentRoutes)
+router.use("/rag", RagRoutes)
 
 export const IndexRoutes = router
