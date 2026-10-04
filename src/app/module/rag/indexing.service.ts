@@ -2,7 +2,12 @@ import { Prisma } from "../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
 import { EmbeddingService } from "./embedding.service";
 
-const toVectorLiteral = (vector: number[]) => `[${vector.join(",")}]`
+const toVectorLiteral = (vector: number[]) => {
+    if (!Array.isArray(vector) || vector.length !== 2048 || vector.some((value) => !Number.isFinite(value))) {
+        throw new Error("Cannot store embedding: expected 2048 finite numeric dimensions");
+    }
+    return `[${vector.join(",")}]`;
+}
 
 export class IndexingService {
     private embeddingService: EmbeddingService;
@@ -34,16 +39,16 @@ export class IndexingService {
                     "content",
                     "metadata",
                     "embedding",
-                    "updatedAt",
+                    "updatedAt"
                 )
                 VALUES 
                 (
-                    ${Prisma.raw("gen_random_uuid()")}
-                    ${chunkKey}
-                    ${sourceType}
-                    ${sourceId}
-                    ${sourceLabel || null}
-                    ${content}
+                    ${Prisma.raw("gen_random_uuid()")},
+                    ${chunkKey},
+                    ${sourceType},
+                    ${sourceId},
+                    ${sourceLabel || null},
+                    ${content},
                     ${JSON.stringify(metadata || {})}::jsonb,
                     CAST(${vectorLiteral} AS vector),
                     NOW()
@@ -58,11 +63,12 @@ export class IndexingService {
                     "embedding"=EXCLUDED."embedding",
                     "isDeleted"=false,
                     "deletedAt"=null,
-                    "updatedAt"=NOW(),
+                    "updatedAt"=NOW()
 
                 `)
         } catch (error) {
             console.log(error)
+            throw error;
         }
     }
     async indexDoctorsData() {
@@ -133,6 +139,7 @@ export class IndexingService {
             }
         } catch (error) {
             console.log(error)
+            throw error;
         }
     }
 }

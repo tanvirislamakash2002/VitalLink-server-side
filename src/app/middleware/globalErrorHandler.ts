@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
-    // NextFunction, 
+    NextFunction,
     Request,
     Response
 } from "express"
@@ -15,9 +15,7 @@ import { deleteUploadedFilesFromGlobalErrorHandler } from "../utils/deleteUpload
 import { Prisma } from "../../generated/prisma/client";
 import { handlePrismaClientInitializationError, handlePrismaClientKnownRequestError, handlePrismaClientRustPanicError, handlePrismaClientUnknownError, handlePrismaClientValidationError } from "../errorHelpers/handlePrismaErrors";
 
-export const globalErrorHandler = async (err: any, req: Request, res: Response
-    // , next: NextFunction
-) => {
+export const globalErrorHandler = async (err: any, req: Request, res: Response, _next: NextFunction) => {
     if (envVars.NODE_ENV === "development") {
         console.log("Error from Global Error Handler", err)
     }
