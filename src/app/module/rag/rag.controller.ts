@@ -5,9 +5,17 @@ import { RAGService } from "./rag.service"
 import { sendResponse } from "../../shared/sendResponse"
 
 const ragService = new RAGService()
-const getStats = async (req: Request, res: Response) => {
-    console.log('rag is connected')
-}
+
+const getStats = catchAsync(async (req: Request, res: Response) => {
+    const result = await ragService.getStats();
+
+    sendResponse(res, {
+        success: true,
+        httpStatusCode: status.OK,
+        message: "RAG stats retrieved successfully",
+        data: result
+    })
+})
 
 const ingestDoctors = catchAsync(async (req: Request, res: Response) => {
     const result = await ragService.ingestDoctorsData()
