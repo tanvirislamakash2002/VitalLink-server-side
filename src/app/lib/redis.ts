@@ -41,4 +41,17 @@ class RedisService {
             console.log(error)
         }
     }
+
+    private ensureConnection(): RedisClientType {
+        if (!this.client) {
+            throw new Error("Redis client not initialized. Call connect() first.")
+        }
+
+        if (!this.isConnected) {
+            throw new Error("Redis client not connected.")
+        }
+        return this.client
+    }
 }
+
+export const redisService = new RedisService();
