@@ -45,7 +45,7 @@ const queryRag = catchAsync(async (req: Request, res: Response) => {
     sendResponse(res, {
         success: true,
         httpStatusCode: status.OK,
-        message: "Doctors data ingestion complete",
+        message: "Assistant response generated successfully",
         data: result
     })
 })
