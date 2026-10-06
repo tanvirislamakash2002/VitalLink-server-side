@@ -74,6 +74,37 @@ class RedisService {
             console.error("Redis SET error: ", err)
         }
     }
+
+    async update(key: string, value: any, ttlInSeconds: number): Promise<void> {
+        await this.set(key, value, ttlInSeconds)
+    }
+
+    async delete(key: string): Promise<void> {
+        try {
+            const client = this.ensureConnection();
+            await client.del(key)
+        } catch (error) {
+            console.log("Redis DELETE error: ", error)
+        }
+    }
+
+    async isAvailable(): Promise<boolean> {
+        try {
+            const client = this.ensureConnection();
+            await client.ping();
+            return true;
+        } catch (error) {
+            console.error(error)
+            return false;
+        }
+    }
+
+    async disConnect(): Promise<void> {
+        if (this.client && this.isConnected) {
+            await this.client.quit();
+            this.isConnected = false;
+        }
+    }
 }
 
 export const redisService = new RedisService();
