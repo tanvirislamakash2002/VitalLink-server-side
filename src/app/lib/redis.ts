@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient, RedisClientType } from "redis"
 import { envVars } from "../../config/env";
 
@@ -39,6 +40,7 @@ class RedisService {
             await this.client.connect();
         } catch (error) {
             console.log(error)
+            this.isConnected = false
         }
     }
 
@@ -51,6 +53,26 @@ class RedisService {
             throw new Error("Redis client not connected.")
         }
         return this.client
+    }
+
+    async get(key: string): Promise<string | null> {
+        try {
+            const client = this.ensureConnection();
+            return await client.get(key);
+        } catch (error) {
+            console.error("Redis GET error:", error)
+            return null
+        }
+    }
+
+    async set(key: string, value: any, ttlInSeconds: number): Promise<void> {
+        try {
+            const client = this.ensureConnection();
+            const stringValue = typeof value === "string" ? value : JSON.stringify(value);
+            await client.set(key, stringValue, { EX: ttlInSeconds })
+        } catch (err) {
+            console.error("Redis SET error: ", err)
+        }
     }
 }
 
