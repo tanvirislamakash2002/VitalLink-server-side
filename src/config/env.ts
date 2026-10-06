@@ -8,6 +8,7 @@ interface EnvConfig {
     NODE_ENV: string;
     PORT: string;
     DATABASE_URL: string;
+    REDIS_URL: string;
     BETTER_AUTH_SECRET: string;
     BETTER_AUTH_URL: string;
     ACCESS_TOKEN_SECRET: string;
@@ -88,6 +89,7 @@ const loadEnvVariables = (): EnvConfig => {
         NODE_ENV: process.env.NODE_ENV as string,
         PORT: process.env.PORT as string,
         DATABASE_URL: process.env.DATABASE_URL as string,
+        REDIS_URL: process.env.REDIS_URL as string,
         BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET as string,
         BETTER_AUTH_URL: process.env.BETTER_AUTH_URL as string,
         ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET as string,
@@ -118,7 +120,7 @@ const loadEnvVariables = (): EnvConfig => {
         },
         SUPER_ADMIN_EMAIL: process.env.SUPER_ADMIN_EMAIL as string,
         SUPER_ADMIN_PASSWORD: process.env.SUPER_ADMIN_PASSWORD as string,
-        RAG:{
+        RAG: {
             OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY as string,
             OPENROUTER_EMBEDDING_MODEL: process.env.OPENROUTER_EMBEDDING_MODEL as string,
             OPENROUTER_LLM_MODEL: process.env.OPENROUTER_LLM_MODEL as string,
