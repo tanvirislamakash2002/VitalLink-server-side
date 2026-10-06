@@ -26,6 +26,17 @@ class RedisService {
                 console.log("Redis Client Ready")
                 this.isConnected = true;
             })
+
+            this.client.on("end", () => {
+                console.log("Redis Client Disconnected");
+                this.isConnected = false
+            })
+
+            this.client.on("reconnecting", () => {
+                console.log("Redis Client Reconnecting")
+            })
+
+            await this.client.connect();
         } catch (error) {
             console.log(error)
         }
