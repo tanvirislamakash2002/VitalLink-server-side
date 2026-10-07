@@ -3,6 +3,7 @@ import { catchAsync } from "../../shared/catchAsync"
 import status from "http-status"
 import { RAGService } from "./rag.service"
 import { sendResponse } from "../../shared/sendResponse"
+import { redisService } from "../../lib/redis"
 
 const ragService = new RAGService()
 
@@ -40,8 +41,43 @@ const queryRag = catchAsync(async (req: Request, res: Response) => {
         })
     }
 
-    const result = await ragService.generateAnswer(query, limit ?? 5, sourceType, true)
+    // Generate Cache Key from query params
 
+    const cacheKey = `rag:query:${query}:${limit ?? 5}:${sourceType || "all"}`
+
+    try {
+        const cachedResult = await redisService.get(cacheKey)
+
+        if (cachedResult) {
+            // Cache-hit
+            const parsedData = JSON.parse(cachedResult)
+
+            sendResponse(res, {
+                success: true,
+                httpStatusCode: status.OK,
+                message: "Answer retrieved from cache",
+                data: parsedData
+            })
+            return;
+        }
+    } catch (err) {
+        console.warn("Cache Read error, proceeding with normal processing: ", err)
+    }
+
+    // cache-Miss
+    const result = await ragService.generateAnswer(
+        query,
+        limit ?? 5,
+        sourceType,
+        true
+    )
+
+    try {
+        // store cache with 10 min(600 sec) TTL
+        await redisService.set(cacheKey, result, 600)
+    } catch (error) {
+        console.warn("Cache write error: ", error)
+    }
     sendResponse(res, {
         success: true,
         httpStatusCode: status.OK,
