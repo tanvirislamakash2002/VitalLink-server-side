@@ -100,11 +100,33 @@ const getAllDoctors = async (query: QueryParams) => {
     }
 
     // Step - 4: Filtering
+    const filterableFields = ["designation", "gender"]
+
+    const filterConditions = {} as Record<string, unknown>
+
+    // if (query.gender) {
+    //     filterConditions.gender = query.gender as Gender
+    // }
+    // if (query.designation) {
+    //     filterConditions.designation = query.designation
+    // }
+
+    filterableFields.forEach(field => {
+        if (query[field]) {
+            filterConditions[field] = query[field]
+        }
+    })
 
     const doctors = await prisma.doctor.findMany({
         where: {
-            OR: searchConditions.length > 0 ? searchConditions : undefined,
-            isDeleted: false
+            AND: [
+                {
+                    OR: searchConditions.length > 0 ? searchConditions : undefined
+                },
+                {
+                    ...filterConditions
+                }
+            ]
         },
         skip,
         take: limit,
